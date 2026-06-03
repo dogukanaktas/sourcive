@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <rect width="32" height="32" rx="8" fill="#09090b"/>
+  <defs>
+    <linearGradient id="bubble" x1="6" y1="6" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+  <!-- Chat bubble -->
+  <path d="M6 8C6 6.9 6.9 6 8 6H24C25.1 6 26 6.9 26 8V20C26 21.1 25.1 22 24 22H18L13 26V22H8C6.9 22 6 21.1 6 20V8Z" fill="url(#bubble)"/>
+  <!-- Lightning bolt -->
+  <path d="M18 8L13 15H17L14 22L21 13H17L18 8Z" fill="white"/>
+</svg>
