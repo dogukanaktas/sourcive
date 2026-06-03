@@ -97,18 +97,14 @@ function createGeminiModel(apiKey: string, model: string): ChatModel {
 }
 
 /* -------------------------------------------------------------------------- */
-/* OpenRouter provider (OpenAI-compatible API).                               */
+/* OpenAI-compatible provider (OpenRouter, Groq, etc.)                        */
 /* -------------------------------------------------------------------------- */
 
-function createOpenRouterModel(apiKey: string, models: string[]): ChatModel {
-  // OpenRouter exposes an OpenAI-compatible endpoint — we just swap the baseURL.
-  const client = new OpenAI({
-    apiKey,
-    baseURL: "https://openrouter.ai/api/v1",
-  });
+function createOpenAICompatibleModel(apiKey: string, baseURL: string, models: string[]): ChatModel {
+  const client = new OpenAI({ apiKey, baseURL });
 
   return {
-    id: "openrouter",
+    id: new URL(baseURL).hostname,
     async *streamChat(messages, opts) {
       for (const model of models) {
         try {
@@ -128,9 +124,10 @@ function createOpenRouterModel(apiKey: string, models: string[]): ChatModel {
           }
           return; // success — don't try remaining models
         } catch (err) {
-          const is503 = err instanceof OpenAI.APIStatusError && err.status === 503;
+          const status = (err as { status?: number }).status;
+          const isRetryable = status === 503 || status === 429;
           // If it's not a 503 or we've exhausted all models, propagate the error.
-          if (!is503 || model === models.at(-1)) throw err;
+          if (!isRetryable || model === models.at(-1)) throw err;
           // Otherwise try the next model in the list.
         }
       }
@@ -168,14 +165,18 @@ export function getModel(): ChatModel {
 
     case "openrouter": {
       const apiKey = process.env.OPENROUTER_API_KEY;
-      if (!apiKey) {
-        throw new Error(
-          "LLM_PROVIDER=openrouter but OPENROUTER_API_KEY is not set in .env.local",
-        );
-      }
-      return createOpenRouterModel(apiKey, [
+      if (!apiKey) throw new Error("LLM_PROVIDER=openrouter but OPENROUTER_API_KEY is not set");
+      return createOpenAICompatibleModel(apiKey, "https://openrouter.ai/api/v1", [
         process.env.OPENROUTER_MODEL ?? "google/gemma-4-31b-it:free",
         process.env.OPENROUTER_MODEL_FALLBACK ?? "meta-llama/llama-3.3-70b-instruct:free",
+      ]);
+    }
+
+    case "groq": {
+      const apiKey = process.env.GROQ_API_KEY;
+      if (!apiKey) throw new Error("LLM_PROVIDER=groq but GROQ_API_KEY is not set");
+      return createOpenAICompatibleModel(apiKey, "https://api.groq.com/openai/v1", [
+        process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
       ]);
     }
 

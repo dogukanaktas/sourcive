@@ -24,8 +24,15 @@ export async function POST(req: Request) {
     return new Response("Invalid JSON body", { status: 400 });
   }
 
-  // 2. Resolve the active provider (mock/gemini) behind the ChatModel contract.
-  const model = getModel();
+  // 2. Resolve the active provider behind the ChatModel contract.
+  let model;
+  try {
+    model = getModel();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "model init failed";
+    console.error("[api/chat] getModel() failed:", message);
+    return new Response(message, { status: 500 });
+  }
   const encoder = new TextEncoder();
 
   // 3. Turn the provider's async generator into an SSE-framed byte stream.
