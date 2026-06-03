@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Square } from "lucide-react";
 import { MessageContent } from "@/components/chat/message-content";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function ChatPage() {
   const { messages, input, isLoading, handleInputChange, handleSubmit, stop } =
@@ -35,8 +36,9 @@ export default function ChatPage() {
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b px-6 py-4 shrink-0">
+      <header className="border-b px-6 py-3 shrink-0 flex items-center justify-between">
         <h1 className="text-base font-semibold tracking-tight">Sourcive</h1>
+        <ThemeToggle />
       </header>
 
       {/* Message list */}
