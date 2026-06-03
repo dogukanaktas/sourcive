@@ -24,6 +24,17 @@ export async function POST(req: Request) {
     return new Response("Invalid JSON body", { status: 400 });
   }
 
+  // Prepend a system prompt if one is configured — kept server-side so the
+  // client can't override it. Falls back to a sensible default.
+  const systemPrompt =
+    process.env.SYSTEM_PROMPT ??
+    "You are a helpful assistant. Always respond in the same language the user writes in.";
+
+  const messagesWithSystem: ChatMessage[] = [
+    { role: "system", content: systemPrompt },
+    ...messages,
+  ];
+
   // 2. Resolve the active provider behind the ChatModel contract.
   let model;
   try {
@@ -39,7 +50,7 @@ export async function POST(req: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
-        for await (const delta of model.streamChat(messages, {
+        for await (const delta of model.streamChat(messagesWithSystem, {
           signal: req.signal, // aborts upstream when the client disconnects
         })) {
           controller.enqueue(encoder.encode(sseEvent({ type: "delta", text: delta })));
