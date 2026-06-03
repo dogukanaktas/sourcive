@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 
 /**
  * Provider-agnostic LLM layer.
@@ -96,6 +97,48 @@ function createGeminiModel(apiKey: string, model: string): ChatModel {
 }
 
 /* -------------------------------------------------------------------------- */
+/* OpenRouter provider (OpenAI-compatible API).                               */
+/* -------------------------------------------------------------------------- */
+
+function createOpenRouterModel(apiKey: string, models: string[]): ChatModel {
+  // OpenRouter exposes an OpenAI-compatible endpoint — we just swap the baseURL.
+  const client = new OpenAI({
+    apiKey,
+    baseURL: "https://openrouter.ai/api/v1",
+  });
+
+  return {
+    id: "openrouter",
+    async *streamChat(messages, opts) {
+      for (const model of models) {
+        try {
+          const stream = await client.chat.completions.create({
+            model,
+            stream: true,
+            messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          });
+
+          for await (const chunk of stream) {
+            if (opts?.signal?.aborted) {
+              stream.controller.abort();
+              return;
+            }
+            const text = chunk.choices[0]?.delta?.content;
+            if (text) yield text;
+          }
+          return; // success — don't try remaining models
+        } catch (err) {
+          const is503 = err instanceof OpenAI.APIStatusError && err.status === 503;
+          // If it's not a 503 or we've exhausted all models, propagate the error.
+          if (!is503 || model === models.at(-1)) throw err;
+          // Otherwise try the next model in the list.
+        }
+      }
+    },
+  };
+}
+
+/* -------------------------------------------------------------------------- */
 /* Factory — the single place that decides which provider is active.          */
 /* -------------------------------------------------------------------------- */
 
@@ -121,6 +164,19 @@ export function getModel(): ChatModel {
         apiKey,
         process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
       );
+    }
+
+    case "openrouter": {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error(
+          "LLM_PROVIDER=openrouter but OPENROUTER_API_KEY is not set in .env.local",
+        );
+      }
+      return createOpenRouterModel(apiKey, [
+        process.env.OPENROUTER_MODEL ?? "google/gemma-4-31b-it:free",
+        process.env.OPENROUTER_MODEL_FALLBACK ?? "meta-llama/llama-3.3-70b-instruct:free",
+      ]);
     }
 
     default:
