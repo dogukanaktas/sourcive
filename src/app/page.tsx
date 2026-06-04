@@ -80,10 +80,13 @@ export default function ChatPage() {
   );
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-screen flex-col bg-gradient-to-b from-background to-muted/20">
       {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur px-6 py-3 shrink-0 flex items-center justify-between">
-        <h1 className="text-base font-semibold tracking-tight">Sourcive</h1>
+        <div className="flex items-center gap-2">
+          <img src="/icon.svg" alt="Sourcive" className="h-6 w-6 rounded-md" />
+          <h1 className="text-base font-semibold tracking-tight">Sourcive</h1>
+        </div>
         <ThemeToggle />
       </header>
 
@@ -92,7 +95,7 @@ export default function ChatPage() {
         <div className="flex flex-1 flex-col items-center justify-center px-4 pb-8">
           <div className="w-full max-w-2xl flex flex-col items-center gap-8">
             <div className="text-center">
-              <h2 className="text-2xl font-semibold tracking-tight">{LABELS.heading}</h2>
+              <h2 className="text-4xl font-semibold tracking-tight">{LABELS.heading}</h2>
               <p className="mt-2 text-sm text-muted-foreground">{LABELS.subheading}</p>
             </div>
 
