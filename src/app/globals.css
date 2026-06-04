@@ -5,6 +5,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Remove hljs token backgrounds inside our CodeBlock */
+[data-code-block] .hljs,
+[data-code-block] .hljs * { background: transparent !important; }
+
 @keyframes blink {
   50% { opacity: 0; }
 }
