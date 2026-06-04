@@ -80,7 +80,7 @@ export function MessageContent({ content, role, showCursor }: Props) {
               (c): c is React.ReactElement =>
                 React.isValidElement(c) && (c as React.ReactElement).type === "code",
             ) as React.ReactElement | undefined;
-            const language = ((codeEl?.props?.className as string) ?? "")
+            const language = (((codeEl?.props as { className?: string })?.className) ?? "")
               .replace("language-", "")
               .replace(" hljs", "")
               .trim();
