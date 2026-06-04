@@ -4,19 +4,27 @@ import { useRef, useEffect } from "react";
 import { useChat } from "@/hooks/use-chat";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Square } from "lucide-react";
+import { Square } from "lucide-react";
 import { MessageContent } from "@/components/chat/message-content";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const LABELS = {
-  empty: "Ask me anything…",
+  heading: "What can I help you with?",
+  subheading: "Ask anything — code, writing, analysis, or just a conversation.",
   you: "You",
   assistant: "Sourcive",
   placeholder: "Message… (Enter to send, Shift+Enter for new line)",
 } as const;
 
+const SUGGESTED_PROMPTS = [
+  "Explain how streaming works in Next.js",
+  "Write a Python quicksort with comments",
+  "What is RAG in AI applications?",
+  "Compare REST vs GraphQL",
+] as const;
+
 export default function ChatPage() {
-  const { messages, input, isLoading, error, handleInputChange, handleSubmit, stop } =
+  const { messages, input, isLoading, error, handleInputChange, handleSubmit, setInput, stop } =
     useChat();
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -25,7 +33,6 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Auto-resize textarea as user types.
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -40,10 +47,15 @@ export default function ChatPage() {
     }
   }
 
+  function onSuggest(prompt: string) {
+    setInput(prompt);
+    textareaRef.current?.focus();
+  }
+
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b px-6 py-3 shrink-0 flex items-center justify-between">
+      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur px-6 py-3 shrink-0 flex items-center justify-between">
         <h1 className="text-base font-semibold tracking-tight">Sourcive</h1>
         <ThemeToggle />
       </header>
@@ -51,34 +63,59 @@ export default function ChatPage() {
       {/* Message list */}
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl px-4 py-8 space-y-8">
+
+          {/* Empty state */}
           {messages.length === 0 && (
-            <p className="text-center text-sm text-muted-foreground pt-24">
-              {LABELS.empty}
-            </p>
+            <div className="flex flex-col items-center gap-6 pt-20 text-center">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  {LABELS.heading}
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {LABELS.subheading}
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {SUGGESTED_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => onSuggest(prompt)}
+                    className="rounded-full border px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground cursor-pointer"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
 
+          {/* Messages */}
           {messages.map((msg, i) => (
             <div key={i} className="space-y-1">
-              {/* Role label */}
               <p className={`text-xs font-medium text-muted-foreground ${msg.role === "user" ? "text-right" : ""}`}>
                 {msg.role === "user" ? LABELS.you : LABELS.assistant}
               </p>
 
-              {/* Message body */}
-              <div className={msg.role === "user" ? "flex justify-end" : ""}>
+              <div className={msg.role === "user" ? "flex justify-end" : "flex items-start gap-3"}>
+                {/* Assistant avatar */}
+                {msg.role === "assistant" && (
+                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-sky-400 text-xs font-bold text-white select-none">
+                    S
+                  </div>
+                )}
+
                 <div
                   className={
                     msg.role === "user"
                       ? "max-w-[80%] rounded-2xl bg-primary px-4 py-3 text-sm text-primary-foreground"
-                      : "text-sm text-foreground"
+                      : "min-w-0 flex-1 text-sm text-foreground"
                   }
                 >
-                  <MessageContent content={msg.content} role={msg.role} />
-                  {isLoading &&
-                    i === messages.length - 1 &&
-                    msg.role === "assistant" && (
-                      <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-current align-middle" />
-                    )}
+                  <MessageContent
+                    content={msg.content}
+                    role={msg.role}
+                    showCursor={isLoading && i === messages.length - 1 && msg.role === "assistant"}
+                  />
                 </div>
               </div>
             </div>
@@ -94,11 +131,11 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Input bar */}
-      <div className="border-t px-4 py-4 shrink-0">
+      {/* Input bar — unified container */}
+      <div className="px-4 py-4 shrink-0">
         <form
           onSubmit={handleSubmit}
-          className="mx-auto flex max-w-3xl items-end gap-2"
+          className="mx-auto max-w-3xl rounded-2xl border bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring"
         >
           <Textarea
             ref={textareaRef}
@@ -108,17 +145,15 @@ export default function ChatPage() {
             placeholder={LABELS.placeholder}
             disabled={isLoading}
             rows={1}
-            className="flex-1 resize-none overflow-hidden min-h-[40px] max-h-[200px]"
+            className="min-h-[48px] max-h-[200px] resize-none overflow-hidden border-0 bg-transparent px-4 pt-3 pb-1 shadow-none focus-visible:ring-0"
             autoFocus
           />
-          {isLoading ? (
-            <Button type="button" variant="outline" size="icon" onClick={stop} className="shrink-0">
-              <Square className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button type="submit" size="icon" disabled={!input.trim()} className="shrink-0">
-              <Send className="h-4 w-4" />
-            </Button>
+          {isLoading && (
+            <div className="flex justify-end px-2 pb-2">
+              <Button type="button" variant="ghost" size="icon" onClick={stop} className="h-8 w-8 cursor-pointer">
+                <Square className="h-4 w-4" />
+              </Button>
+            </div>
           )}
         </form>
       </div>

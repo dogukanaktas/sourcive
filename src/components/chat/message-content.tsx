@@ -8,15 +8,19 @@ import "highlight.js/styles/github-dark.css";
 interface Props {
   content: string;
   role: "user" | "assistant" | "system";
+  showCursor?: boolean;
 }
 
-export function MessageContent({ content, role }: Props) {
+export function MessageContent({ content, role, showCursor }: Props) {
   if (role !== "assistant") {
     return <span className="whitespace-pre-wrap">{content}</span>;
   }
 
   return (
-    <div className="prose prose-neutral dark:prose-invert max-w-none prose-pre:p-0 prose-pre:bg-transparent prose-code:before:content-none prose-code:after:content-none">
+    <div
+      className="prose prose-neutral dark:prose-invert max-w-none prose-pre:p-0 prose-pre:bg-transparent prose-code:before:content-none prose-code:after:content-none"
+      data-streaming={showCursor ? "true" : undefined}
+    >
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       rehypePlugins={[rehypeHighlight]}

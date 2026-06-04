@@ -72,6 +72,7 @@ export async function POST(req: Request) {
           signal: req.signal, // aborts upstream when the client disconnects
         })) {
           controller.enqueue(encoder.encode(sseEvent({ type: "delta", text: delta })));
+          await new Promise((r) => setTimeout(r, 20));
         }
         controller.enqueue(encoder.encode(sseEvent({ type: "done" })));
       } catch (err) {

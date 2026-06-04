@@ -12,6 +12,7 @@ export interface UseChatReturn {
   error: string | null;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
+  setInput: (value: string) => void;
   stop: () => void;
 }
 
@@ -129,5 +130,5 @@ export function useChat(): UseChatReturn {
     [input, isLoading, messages],
   );
 
-  return { messages, input, isLoading, error, handleInputChange, handleSubmit, stop };
+  return { messages, input, isLoading, error, handleInputChange, handleSubmit, setInput, stop };
 }

@@ -5,6 +5,21 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+[data-streaming] > *:last-child::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 0.85em;
+  background-color: currentColor;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
