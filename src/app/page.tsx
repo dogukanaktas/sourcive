@@ -9,7 +9,7 @@ import { MessageContent } from "@/components/chat/message-content";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function ChatPage() {
-  const { messages, input, isLoading, handleInputChange, handleSubmit, stop } =
+  const { messages, input, isLoading, error, handleInputChange, handleSubmit, stop } =
     useChat();
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -79,6 +79,13 @@ export default function ChatPage() {
           <div ref={bottomRef} />
         </div>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="border-t bg-destructive/10 px-4 py-2 text-center text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       {/* Input bar */}
       <div className="border-t px-4 py-4 shrink-0">

@@ -1,4 +1,5 @@
 import { getModel, type ChatMessage } from "@/lib/llm";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Node is the default runtime; stated explicitly because the Gemini SDK relies
 // on Node APIs. (Edge would also work for fetch-based SDKs, but Node is safest.)
@@ -22,6 +23,18 @@ export async function POST(req: Request) {
     }
   } catch {
     return new Response("Invalid JSON body", { status: 400 });
+  }
+
+  // 2. Rate limiting — check before any expensive work.
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  const { allowed, reason } = checkRateLimit(ip);
+  if (!allowed) {
+    const message =
+      reason === "global_limit"
+        ? "Günlük demo kotası doldu, yarın tekrar deneyin."
+        : "Günlük mesaj limitinize ulaştınız, yarın tekrar deneyin.";
+    return new Response(message, { status: 429 });
   }
 
   // Prepend a system prompt if one is configured — kept server-side so the

@@ -9,6 +9,7 @@ export interface UseChatReturn {
   messages: ChatMessage[];
   input: string;
   isLoading: boolean;
+  error: string | null;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
   stop: () => void;
@@ -18,6 +19,7 @@ export function useChat(): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const handleInputChange = useCallback(
@@ -60,7 +62,8 @@ export function useChat(): UseChatReturn {
         });
 
         if (!res.ok || !res.body) {
-          throw new Error(`HTTP ${res.status}`);
+          const body = await res.text().catch(() => "");
+          throw new Error(body || `HTTP ${res.status}`);
         }
 
         // Read the SSE byte stream and accumulate text deltas into the last message.
@@ -109,16 +112,14 @@ export function useChat(): UseChatReturn {
         }
       } catch (err) {
         if ((err as Error).name === "AbortError") {
-          // User clicked stop — partial reply already in state, that's fine.
           return;
         }
-        // On real errors remove the empty assistant placeholder so the UI
-        // doesn't show a blank bubble.
         setMessages((prev) =>
           prev[prev.length - 1]?.content === ""
             ? prev.slice(0, -1)
             : prev,
         );
+        setError((err as Error).message ?? "Bir hata oluştu.");
         console.error("[useChat]", err);
       } finally {
         setIsLoading(false);
@@ -128,5 +129,5 @@ export function useChat(): UseChatReturn {
     [input, isLoading, messages],
   );
 
-  return { messages, input, isLoading, handleInputChange, handleSubmit, stop };
+  return { messages, input, isLoading, error, handleInputChange, handleSubmit, stop };
 }
