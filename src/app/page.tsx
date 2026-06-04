@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import { useChat } from "@/hooks/use-chat";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Square, SquarePen } from "lucide-react";
+import { Square } from "lucide-react";
 import { MessageContent } from "@/components/chat/message-content";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -84,14 +84,7 @@ export default function ChatPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur px-6 py-3 shrink-0 flex items-center justify-between">
         <h1 className="text-base font-semibold tracking-tight">Sourcive</h1>
-        <div className="flex items-center gap-1">
-          {!isEmpty && (
-            <Button variant="ghost" size="icon" onClick={clearMessages} className="cursor-pointer" aria-label="New chat">
-              <SquarePen className="h-4 w-4" />
-            </Button>
-          )}
-          <ThemeToggle />
-        </div>
+        <ThemeToggle />
       </header>
 
       {isEmpty ? (
