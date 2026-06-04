@@ -24,7 +24,7 @@ const SUGGESTED_PROMPTS = [
 ] as const;
 
 export default function ChatPage() {
-  const { messages, input, isLoading, error, usage, handleInputChange, handleSubmit, setInput, clearMessages, stop } =
+  const { messages, input, isLoading, error, usage, isContextLong, handleInputChange, handleSubmit, setInput, clearMessages, stop } =
     useChat();
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -135,6 +135,16 @@ export default function ChatPage() {
       {error && (
         <div className="border-t bg-destructive/10 px-4 py-2 text-center text-sm text-destructive">
           {error}
+        </div>
+      )}
+
+      {/* Context length warning */}
+      {isContextLong && (
+        <div className="border-t bg-yellow-500/10 px-4 py-2 text-center text-xs text-yellow-600 dark:text-yellow-400">
+          Conversation is getting long — consider{" "}
+          <button onClick={clearMessages} className="underline underline-offset-2 cursor-pointer">
+            starting a new chat
+          </button>
         </div>
       )}
 

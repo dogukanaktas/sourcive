@@ -12,12 +12,16 @@ export interface UsageStats {
   estimatedCost?: number;
 }
 
+// ~4 chars per token, warn at ~12k tokens (48k chars)
+const CONTEXT_WARN_CHARS = 48_000;
+
 export interface UseChatReturn {
   messages: ChatMessage[];
   input: string;
   isLoading: boolean;
   error: string | null;
   usage: UsageStats | null;
+  isContextLong: boolean;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
   setInput: (value: string) => void;
@@ -155,5 +159,8 @@ export function useChat(): UseChatReturn {
     [input, isLoading, messages],
   );
 
-  return { messages, input, isLoading, error, usage, handleInputChange, handleSubmit, setInput, clearMessages, stop };
+  const isContextLong =
+    messages.reduce((sum, m) => sum + m.content.length, 0) > CONTEXT_WARN_CHARS;
+
+  return { messages, input, isLoading, error, usage, isContextLong, handleInputChange, handleSubmit, setInput, clearMessages, stop };
 }
