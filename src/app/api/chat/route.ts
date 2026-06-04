@@ -69,7 +69,18 @@ export async function POST(req: Request) {
     async start(controller) {
       try {
         for await (const delta of model.streamChat(messagesWithSystem, {
-          signal: req.signal, // aborts upstream when the client disconnects
+          signal: req.signal,
+          onUsage(usage) {
+            const pricing = model.pricing;
+            const estimatedCost = pricing
+              ? (usage.promptTokens * pricing.inputPerM + usage.completionTokens * pricing.outputPerM) / 1_000_000
+              : undefined;
+            controller.enqueue(encoder.encode(sseEvent({
+              type: "usage",
+              ...usage,
+              estimatedCost,
+            })));
+          },
         })) {
           controller.enqueue(encoder.encode(sseEvent({ type: "delta", text: delta })));
           await new Promise((r) => setTimeout(r, 20));

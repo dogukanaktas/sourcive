@@ -18,15 +18,27 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface UsageStats {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export interface Pricing {
+  /** USD per million input tokens */
+  inputPerM: number;
+  /** USD per million output tokens */
+  outputPerM: number;
+}
+
 export interface StreamOptions {
-  /** Aborts the upstream provider stream when the client disconnects. */
   signal?: AbortSignal;
+  onUsage?: (usage: UsageStats) => void;
 }
 
 export interface ChatModel {
-  /** Stable identifier, handy for logging / debugging which provider ran. */
   readonly id: string;
-  /** Streams the assistant reply as plain text deltas. */
+  readonly pricing?: Pricing;
   streamChat(
     messages: ChatMessage[],
     opts?: StreamOptions,
@@ -100,19 +112,28 @@ function createGeminiModel(apiKey: string, model: string): ChatModel {
 /* OpenAI-compatible provider (OpenRouter, Groq, etc.)                        */
 /* -------------------------------------------------------------------------- */
 
-function createOpenAICompatibleModel(apiKey: string, baseURL: string, models: string[]): ChatModel {
+function createOpenAICompatibleModel(
+  apiKey: string,
+  baseURL: string,
+  models: string[],
+  pricing?: Pricing,
+): ChatModel {
   const client = new OpenAI({ apiKey, baseURL });
 
   return {
     id: new URL(baseURL).hostname,
+    pricing,
     async *streamChat(messages, opts) {
       for (const model of models) {
         try {
           const stream = await client.chat.completions.create({
             model,
             stream: true,
+            stream_options: { include_usage: true },
             messages: messages.map((m) => ({ role: m.role, content: m.content })),
           });
+
+          let usage: UsageStats | null = null;
 
           for await (const chunk of stream) {
             if (opts?.signal?.aborted) {
@@ -121,14 +142,22 @@ function createOpenAICompatibleModel(apiKey: string, baseURL: string, models: st
             }
             const text = chunk.choices[0]?.delta?.content;
             if (text) yield text;
+            // The last chunk carries usage data (when stream_options.include_usage is true).
+            if (chunk.usage) {
+              usage = {
+                promptTokens: chunk.usage.prompt_tokens,
+                completionTokens: chunk.usage.completion_tokens,
+                totalTokens: chunk.usage.total_tokens,
+              };
+            }
           }
-          return; // success — don't try remaining models
+
+          if (usage) opts?.onUsage?.(usage);
+          return;
         } catch (err) {
           const status = (err as { status?: number }).status;
           const isRetryable = status === 503 || status === 429;
-          // If it's not a 503 or we've exhausted all models, propagate the error.
           if (!isRetryable || model === models.at(-1)) throw err;
-          // Otherwise try the next model in the list.
         }
       }
     },
@@ -169,7 +198,7 @@ export function getModel(): ChatModel {
       return createOpenAICompatibleModel(apiKey, "https://openrouter.ai/api/v1", [
         process.env.OPENROUTER_MODEL ?? "google/gemma-4-31b-it:free",
         process.env.OPENROUTER_MODEL_FALLBACK ?? "meta-llama/llama-3.3-70b-instruct:free",
-      ]);
+      ], { inputPerM: 0.10, outputPerM: 0.10 });
     }
 
     case "groq": {
@@ -177,7 +206,7 @@ export function getModel(): ChatModel {
       if (!apiKey) throw new Error("LLM_PROVIDER=groq but GROQ_API_KEY is not set");
       return createOpenAICompatibleModel(apiKey, "https://api.groq.com/openai/v1", [
         process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
-      ]);
+      ], { inputPerM: 0.59, outputPerM: 0.79 });
     }
 
     default:

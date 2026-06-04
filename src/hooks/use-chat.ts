@@ -5,14 +5,23 @@ import type { ChatMessage } from "@/lib/llm";
 
 export type { ChatMessage };
 
+export interface UsageStats {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  estimatedCost?: number;
+}
+
 export interface UseChatReturn {
   messages: ChatMessage[];
   input: string;
   isLoading: boolean;
   error: string | null;
+  usage: UsageStats | null;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
   setInput: (value: string) => void;
+  clearMessages: () => void;
   stop: () => void;
 }
 
@@ -21,7 +30,16 @@ export function useChat(): UseChatReturn {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usage, setUsage] = useState<UsageStats | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const clearMessages = useCallback(() => {
+    abortRef.current?.abort();
+    setMessages([]);
+    setInput("");
+    setError(null);
+    setUsage(null);
+  }, []);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -88,7 +106,7 @@ export function useChat(): UseChatReturn {
             const line = event.trim();
             if (!line.startsWith("data: ")) continue;
 
-            let parsed: { type: string; text?: string; error?: string };
+            let parsed: { type: string; text?: string; error?: string; promptTokens?: number; completionTokens?: number; totalTokens?: number; estimatedCost?: number };
             try {
               parsed = JSON.parse(line.slice("data: ".length));
             } catch {
@@ -104,6 +122,13 @@ export function useChat(): UseChatReturn {
                   content: last.content + parsed.text,
                 };
                 return updated;
+              });
+            } else if (parsed.type === "usage") {
+              setUsage({
+                promptTokens: parsed.promptTokens ?? 0,
+                completionTokens: parsed.completionTokens ?? 0,
+                totalTokens: parsed.totalTokens ?? 0,
+                estimatedCost: parsed.estimatedCost,
               });
             } else if (parsed.type === "error") {
               throw new Error(parsed.error ?? "stream error");
@@ -130,5 +155,5 @@ export function useChat(): UseChatReturn {
     [input, isLoading, messages],
   );
 
-  return { messages, input, isLoading, error, handleInputChange, handleSubmit, setInput, stop };
+  return { messages, input, isLoading, error, usage, handleInputChange, handleSubmit, setInput, clearMessages, stop };
 }

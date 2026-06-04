@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react";
 import { useChat } from "@/hooks/use-chat";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Square } from "lucide-react";
+import { Square, SquarePen } from "lucide-react";
 import { MessageContent } from "@/components/chat/message-content";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -24,7 +24,7 @@ const SUGGESTED_PROMPTS = [
 ] as const;
 
 export default function ChatPage() {
-  const { messages, input, isLoading, error, handleInputChange, handleSubmit, setInput, stop } =
+  const { messages, input, isLoading, error, usage, handleInputChange, handleSubmit, setInput, clearMessages, stop } =
     useChat();
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -57,7 +57,14 @@ export default function ChatPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur px-6 py-3 shrink-0 flex items-center justify-between">
         <h1 className="text-base font-semibold tracking-tight">Sourcive</h1>
-        <ThemeToggle />
+        <div className="flex items-center gap-1">
+          {messages.length > 0 && (
+            <Button variant="ghost" size="icon" onClick={clearMessages} className="cursor-pointer" aria-label="New chat">
+              <SquarePen className="h-4 w-4" />
+            </Button>
+          )}
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* Message list */}
@@ -128,6 +135,16 @@ export default function ChatPage() {
       {error && (
         <div className="border-t bg-destructive/10 px-4 py-2 text-center text-sm text-destructive">
           {error}
+        </div>
+      )}
+
+      {/* Token / cost indicator */}
+      {usage && (
+        <div className="px-4 pb-1 text-center text-xs text-muted-foreground">
+          {usage.totalTokens.toLocaleString()} tokens
+          {usage.estimatedCost !== undefined && (
+            <> · ~${usage.estimatedCost < 0.001 ? "<0.001" : usage.estimatedCost.toFixed(4)}</>
+          )}
         </div>
       )}
 
