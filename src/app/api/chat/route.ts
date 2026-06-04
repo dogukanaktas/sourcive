@@ -32,8 +32,8 @@ export async function POST(req: Request) {
   if (!allowed) {
     const message =
       reason === "global_limit"
-        ? "Günlük demo kotası doldu, yarın tekrar deneyin."
-        : "Günlük mesaj limitinize ulaştınız, yarın tekrar deneyin.";
+        ? "Daily demo quota reached. Please try again tomorrow."
+        : "You've reached your daily message limit. Please try again tomorrow.";
     return new Response(message, { status: 429 });
   }
 

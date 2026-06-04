@@ -46,7 +46,7 @@ export default function ChatPage() {
         <div className="mx-auto max-w-3xl px-4 py-8 space-y-8">
           {messages.length === 0 && (
             <p className="text-center text-sm text-muted-foreground pt-24">
-              Bir şey sor…
+              Ask me anything…
             </p>
           )}
 
@@ -54,7 +54,7 @@ export default function ChatPage() {
             <div key={i} className="space-y-1">
               {/* Role label */}
               <p className={`text-xs font-medium text-muted-foreground ${msg.role === "user" ? "text-right" : ""}`}>
-                {msg.role === "user" ? "Sen" : "Sourcive"}
+                {msg.role === "user" ? "You" : "Sourcive"}
               </p>
 
               {/* Message body */}
@@ -98,7 +98,7 @@ export default function ChatPage() {
             value={input}
             onChange={handleInputChange}
             onKeyDown={onKeyDown}
-            placeholder="Mesajını yaz… (Enter gönd, Shift+Enter yeni satır)"
+            placeholder="Message… (Enter to send, Shift+Enter for new line)"
             disabled={isLoading}
             rows={1}
             className="flex-1 resize-none overflow-hidden min-h-[40px] max-h-[200px]"

@@ -119,7 +119,7 @@ export function useChat(): UseChatReturn {
             ? prev.slice(0, -1)
             : prev,
         );
-        setError((err as Error).message ?? "Bir hata oluştu.");
+        setError((err as Error).message ?? "Something went wrong.");
         console.error("[useChat]", err);
       } finally {
         setIsLoading(false);
