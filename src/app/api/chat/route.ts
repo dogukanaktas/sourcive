@@ -5,6 +5,18 @@ import { checkRateLimit } from "@/lib/rate-limit";
 // on Node APIs. (Edge would also work for fetch-based SDKs, but Node is safest.)
 export const runtime = "nodejs";
 
+const ERRORS = {
+  invalidBody: "`messages` must be a non-empty array",
+  invalidJson: "Invalid JSON body",
+  modelInitFailed: "Model initialization failed",
+  streamFailed: "Stream failed",
+  globalLimit: "Daily demo quota reached. Please try again tomorrow.",
+  ipLimit: "You've reached your daily message limit. Please try again tomorrow.",
+} as const;
+
+const DEFAULT_SYSTEM_PROMPT =
+  "You are a helpful assistant. Always respond in the same language the user writes in.";
+
 /** One SSE event = `data: <json>\n\n`. JSON lets us tag each event's type. */
 function sseEvent(data: unknown): string {
   return `data: ${JSON.stringify(data)}\n\n`;
@@ -17,12 +29,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     messages = body?.messages;
     if (!Array.isArray(messages) || messages.length === 0) {
-      return new Response("`messages` must be a non-empty array", {
-        status: 400,
-      });
+      return new Response(ERRORS.invalidBody, { status: 400 });
     }
   } catch {
-    return new Response("Invalid JSON body", { status: 400 });
+    return new Response(ERRORS.invalidJson, { status: 400 });
   }
 
   // 2. Rate limiting — check before any expensive work.
@@ -30,18 +40,13 @@ export async function POST(req: Request) {
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
   const { allowed, reason } = checkRateLimit(ip);
   if (!allowed) {
-    const message =
-      reason === "global_limit"
-        ? "Daily demo quota reached. Please try again tomorrow."
-        : "You've reached your daily message limit. Please try again tomorrow.";
+    const message = reason === "global_limit" ? ERRORS.globalLimit : ERRORS.ipLimit;
     return new Response(message, { status: 429 });
   }
 
   // Prepend a system prompt if one is configured — kept server-side so the
   // client can't override it. Falls back to a sensible default.
-  const systemPrompt =
-    process.env.SYSTEM_PROMPT ??
-    "You are a helpful assistant. Always respond in the same language the user writes in.";
+  const systemPrompt = process.env.SYSTEM_PROMPT ?? DEFAULT_SYSTEM_PROMPT;
 
   const messagesWithSystem: ChatMessage[] = [
     { role: "system", content: systemPrompt },
@@ -53,7 +58,7 @@ export async function POST(req: Request) {
   try {
     model = getModel();
   } catch (err) {
-    const message = err instanceof Error ? err.message : "model init failed";
+    const message = err instanceof Error ? err.message : ERRORS.modelInitFailed;
     console.error("[api/chat] getModel() failed:", message);
     return new Response(message, { status: 500 });
   }
@@ -72,7 +77,7 @@ export async function POST(req: Request) {
       } catch (err) {
         // Status is already 200 once streaming starts, so we surface the error
         // as an in-band event rather than an HTTP error code.
-        const message = err instanceof Error ? err.message : "stream failed";
+        const message = err instanceof Error ? err.message : ERRORS.streamFailed;
         controller.enqueue(encoder.encode(sseEvent({ type: "error", error: message })));
       } finally {
         controller.close();
