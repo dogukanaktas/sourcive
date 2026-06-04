@@ -8,6 +8,13 @@ import { Send, Square } from "lucide-react";
 import { MessageContent } from "@/components/chat/message-content";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+const LABELS = {
+  empty: "Ask me anything…",
+  you: "You",
+  assistant: "Sourcive",
+  placeholder: "Message… (Enter to send, Shift+Enter for new line)",
+} as const;
+
 export default function ChatPage() {
   const { messages, input, isLoading, error, handleInputChange, handleSubmit, stop } =
     useChat();
@@ -46,7 +53,7 @@ export default function ChatPage() {
         <div className="mx-auto max-w-3xl px-4 py-8 space-y-8">
           {messages.length === 0 && (
             <p className="text-center text-sm text-muted-foreground pt-24">
-              Ask me anything…
+              {LABELS.empty}
             </p>
           )}
 
@@ -54,7 +61,7 @@ export default function ChatPage() {
             <div key={i} className="space-y-1">
               {/* Role label */}
               <p className={`text-xs font-medium text-muted-foreground ${msg.role === "user" ? "text-right" : ""}`}>
-                {msg.role === "user" ? "You" : "Sourcive"}
+                {msg.role === "user" ? LABELS.you : LABELS.assistant}
               </p>
 
               {/* Message body */}
@@ -98,7 +105,7 @@ export default function ChatPage() {
             value={input}
             onChange={handleInputChange}
             onKeyDown={onKeyDown}
-            placeholder="Message… (Enter to send, Shift+Enter for new line)"
+            placeholder={LABELS.placeholder}
             disabled={isLoading}
             rows={1}
             className="flex-1 resize-none overflow-hidden min-h-[40px] max-h-[200px]"
