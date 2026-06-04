@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   // client can't override it. Falls back to a sensible default.
   const systemPrompt =
     process.env.SYSTEM_PROMPT ??
-    "You are a helpful assistant. Always respond in English unless the user explicitly asks you to use another language.";
+    "You are a helpful assistant. Always respond in the same language the user writes in.";
 
   const messagesWithSystem: ChatMessage[] = [
     { role: "system", content: systemPrompt },
