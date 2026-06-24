@@ -26,6 +26,7 @@ export interface UseChatReturn {
   handleSubmit: (e: React.FormEvent) => void;
   setInput: (value: string) => void;
   clearMessages: () => void;
+  resetWithMessages: (messages: ChatMessage[]) => void;
   stop: () => void;
 }
 
@@ -41,6 +42,13 @@ export function useChat(): UseChatReturn {
     abortRef.current?.abort();
     setMessages([]);
     setInput("");
+    setError(null);
+    setUsage(null);
+  }, []);
+
+  const resetWithMessages = useCallback((msgs: ChatMessage[]) => {
+    abortRef.current?.abort();
+    setMessages(msgs);
     setError(null);
     setUsage(null);
   }, []);
@@ -162,5 +170,5 @@ export function useChat(): UseChatReturn {
   const isContextLong =
     messages.reduce((sum, m) => sum + m.content.length, 0) > CONTEXT_WARN_CHARS;
 
-  return { messages, input, isLoading, error, usage, isContextLong, handleInputChange, handleSubmit, setInput, clearMessages, stop };
+  return { messages, input, isLoading, error, usage, isContextLong, handleInputChange, handleSubmit, setInput, clearMessages, resetWithMessages, stop };
 }
