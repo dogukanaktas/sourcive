@@ -93,46 +93,6 @@ src/
 
 The `ChatModel` interface in `lib/llm.ts` is the key abstraction — every provider implements `streamChat()` returning an `AsyncIterable<string>`. Adding a new provider means adding one factory function and one `case` in `getModel()`.
 
-## Supabase Setup
-
-Run this SQL in the Supabase SQL editor to create the required tables:
-
-```sql
-create table conversations (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users(id) on delete cascade,
-  title text not null,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-
-create table messages (
-  id uuid primary key default gen_random_uuid(),
-  conversation_id uuid references conversations(id) on delete cascade,
-  role text not null check (role in ('user', 'assistant')),
-  content text not null,
-  created_at timestamptz default now()
-);
-
-alter table conversations enable row level security;
-alter table messages enable row level security;
-
-create policy "users own conversations"
-  on conversations for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
-
-create policy "users own messages"
-  on messages for all
-  using (
-    conversation_id in (
-      select id from conversations where user_id = auth.uid()
-    )
-  );
-```
-
-Enable **Anonymous sign-ins** under Authentication → Sign In Methods in the Supabase dashboard.
-
 ## Testing
 
 ```bash
