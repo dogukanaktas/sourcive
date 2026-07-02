@@ -11,7 +11,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
 
   function handleNew() {
-    router.push(`/chat/${crypto.randomUUID()}`);
+    router.push("/");
     onNavigate?.();
   }
 
@@ -24,7 +24,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     e.stopPropagation();
     await deleteConversation(id);
     if (pathname === `/chat/${id}`) {
-      router.push(`/chat/${crypto.randomUUID()}`);
+      router.push("/");
     }
   }
 

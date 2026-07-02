@@ -1,5 +1,16 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect } from "react";
+import { ChatView } from "@/components/chat/chat-view";
+import { useChatContext } from "@/contexts/chat-context";
 
 export default function Home() {
-  redirect(`/chat/${crypto.randomUUID()}`);
+  const { startNewChat } = useChatContext();
+
+  useEffect(() => {
+    startNewChat();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return <ChatView />;
 }

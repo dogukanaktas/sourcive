@@ -69,10 +69,10 @@ describe("Sidebar — date formatting", () => {
 });
 
 describe("Sidebar — actions", () => {
-  it("navigates to a new UUID when New chat is clicked", async () => {
+  it("navigates to the landing page when New chat is clicked", async () => {
     render(<Sidebar />);
     await userEvent.click(screen.getByRole("button", { name: /new chat/i }));
-    expect(mockPush).toHaveBeenCalledWith(expect.stringMatching(/^\/chat\/.+/));
+    expect(mockPush).toHaveBeenCalledWith("/");
   });
 
   it("navigates to the conversation when its title is clicked", async () => {
