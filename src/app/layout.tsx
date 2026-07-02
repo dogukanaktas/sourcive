@@ -15,9 +15,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const TITLE = "Sourcive";
+const DESCRIPTION = "AI-powered streaming chat";
+
 export const metadata: Metadata = {
-  title: "Sourcive",
-  description: "AI-powered streaming chat",
+  metadataBase: new URL("https://sourcive.daktas.dev"),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "https://sourcive.daktas.dev",
+    siteName: TITLE,
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({
