@@ -16,7 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 const TITLE = "Sourcive";
-const DESCRIPTION = "AI-powered streaming chat";
+const DESCRIPTION =
+  "Sourcive is an AI-powered chat app with real-time streaming responses, persistent conversation history, and a clean, minimal interface.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sourcive.daktas.dev"),
