@@ -39,12 +39,13 @@ LLM_PROVIDER=groq
 
 # Groq
 GROQ_API_KEY=gsk_...
-GROQ_MODEL=llama-3.3-70b-versatile          # optional
+GROQ_MODEL=openai/gpt-oss-120b          # optional (free tier)
+GROQ_MODEL_FALLBACK=openai/gpt-oss-20b  # optional (free tier, used on 429/503)
 
 # OpenRouter
 OPENROUTER_API_KEY=sk-or-...
 OPENROUTER_MODEL=google/gemma-4-31b-it:free  # optional
-OPENROUTER_MODEL_FALLBACK=meta-llama/llama-3.3-70b-instruct:free  # optional
+OPENROUTER_MODEL_FALLBACK=nvidia/nemotron-3-super-120b-a12b:free  # optional
 
 # Gemini
 GEMINI_API_KEY=AIza...

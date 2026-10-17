@@ -125,6 +125,9 @@ function createOpenAICompatibleModel(
     pricing,
     async *streamChat(messages, opts) {
       for (const model of models) {
+        // Once text has reached the caller, switching models would append a
+        // second answer to a partial one — so only fall back before the first token.
+        let started = false;
         try {
           const stream = await client.chat.completions.create({
             model,
@@ -141,7 +144,10 @@ function createOpenAICompatibleModel(
               return;
             }
             const text = chunk.choices[0]?.delta?.content;
-            if (text) yield text;
+            if (text) {
+              started = true;
+              yield text;
+            }
             // The last chunk carries usage data (when stream_options.include_usage is true).
             if (chunk.usage) {
               usage = {
@@ -157,7 +163,7 @@ function createOpenAICompatibleModel(
         } catch (err) {
           const status = (err as { status?: number }).status;
           const isRetryable = status === 503 || status === 429;
-          if (!isRetryable || model === models.at(-1)) throw err;
+          if (started || !isRetryable || model === models.at(-1)) throw err;
         }
       }
     },
@@ -197,16 +203,17 @@ export function getModel(): ChatModel {
       if (!apiKey) throw new Error("LLM_PROVIDER=openrouter but OPENROUTER_API_KEY is not set");
       return createOpenAICompatibleModel(apiKey, "https://openrouter.ai/api/v1", [
         process.env.OPENROUTER_MODEL ?? "google/gemma-4-31b-it:free",
-        process.env.OPENROUTER_MODEL_FALLBACK ?? "meta-llama/llama-3.3-70b-instruct:free",
-      ], { inputPerM: 0.10, outputPerM: 0.10 });
+        process.env.OPENROUTER_MODEL_FALLBACK ?? "nvidia/nemotron-3-super-120b-a12b:free",
+      ]);
     }
 
     case "groq": {
       const apiKey = process.env.GROQ_API_KEY;
       if (!apiKey) throw new Error("LLM_PROVIDER=groq but GROQ_API_KEY is not set");
       return createOpenAICompatibleModel(apiKey, "https://api.groq.com/openai/v1", [
-        process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
-      ], { inputPerM: 0.59, outputPerM: 0.79 });
+        process.env.GROQ_MODEL ?? "openai/gpt-oss-120b",
+        process.env.GROQ_MODEL_FALLBACK ?? "openai/gpt-oss-20b",
+      ]);
     }
 
     default:
